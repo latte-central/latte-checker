@@ -22,11 +22,21 @@ type term =
   | Ref of string * (term list) * astinfo
   | Assert of term * term * astinfo
 
+let kind_ = Kind NoInfo
+let type_ = Type NoInfo
+let var_ x = Var (x, NoInfo)
+let lambda_ (x, t) e = Lambda (x, t, e, NoInfo)
+let prod_ (x, t) e = Prod (x, t, e, NoInfo)
+let app_ t1 t2 = App (t1, t2, NoInfo)
+let ref_ n args = Ref (n, args, NoInfo)
+let ascribe_ e t = Assert (e, t, NoInfo)
+                              
 let rec string_of_term = function
   | Kind _ -> ":kind"
   | Type _ -> ":type"
   | Var (x, _) -> x
   | Lambda (x, t, e, _)
+
     -> Printf.sprintf "(lambda [%s %s] %s)"
          x (string_of_term t) (string_of_term e)
   | Prod (x, t, e, _)
