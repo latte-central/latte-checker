@@ -1,9 +1,7 @@
 
 (* 
 
-The representation of lambda-terms 
-
-The 'a type argument 
+The representation of lambda-terms.
 
 *)
 
@@ -50,7 +48,19 @@ let rec string_of_term = function
     -> Printf.sprintf "(::ascribe %s %s)" (string_of_term e) (string_of_term t)
 
          
-                                    
-                                    
-                                    
-                                    
+(* Variables and occurrences *)
+
+let rec vars = function
+  | Kind _ -> StringSet.empty
+  | Type _ -> StringSet.empty
+  | Var (x, _) -> StringSet.singleton x
+  | Lambda (x, t, e, _) -> StringSet.union (StringSet.singleton x)
+                                           (StringSet.union (vars t) (vars e))
+  | Prod (x, t, e, _) -> StringSet.union (StringSet.singleton x)
+                                         (StringSet.union (vars t) (vars e))
+  | App (t1, t2, _) -> StringSet.union (vars t1) (vars t2)
+  | Ref (name, args, _) -> List.fold_left (fun vs t -> StringSet.union vs (vars t)) StringSet.empty args
+  | Assert (e, t, _) -> StringSet.union (vars e) (vars t)
+
+                                        
+           

@@ -1,8 +1,11 @@
 
 open OUnit2
 
+open Utils
 open Syntax
-     
+
+(* basic ast tests*)
+       
 let ast_test1 ctx = assert_equal (string_of_term kind_) ":kind"
 let ast_test2 ctx = assert_equal (string_of_term type_) ":type"
 let ast_test3 ctx = assert_equal (string_of_term (var_ "x")) "x"
@@ -23,9 +26,23 @@ let ast_suite =
     ; "test6" >:: ast_test6
     ] ;;
 
+(* variables tests *)
+let vars_test1 ctx = assert_equal (string_of_stringset (vars (lambda_ ("x", var_ "T") (var_ "x"))))
+                                  "{T,x}"
+
+let vars_suite =
+  "vars">:::
+    ["test1" >:: vars_test1
+                   (* ; "test2" >:: ast_test2 *)
+    ] ;;
+
+                                  
 let _ =
   Printf.printf "===== Running tests =====\n" ;
   Printf.printf "==> suite 'ast'\n" ;
-  run_test_tt_main ast_suite
+  run_test_tt_main ast_suite ;
+  Printf.printf "==> suite 'vars'\n" ;
+  (* Printf.printf "%s" (string_of_stringset (vars (lambda_ ("x", var_ "T") (var_ "x")))) ; *)
+  run_test_tt_main vars_suite
 
     
