@@ -54,13 +54,36 @@ let rec vars = function
   | Kind _ -> StringSet.empty
   | Type _ -> StringSet.empty
   | Var (x, _) -> StringSet.singleton x
-  | Lambda (x, t, e, _) -> StringSet.union (StringSet.singleton x)
-                                           (StringSet.union (vars t) (vars e))
-  | Prod (x, t, e, _) -> StringSet.union (StringSet.singleton x)
-                                         (StringSet.union (vars t) (vars e))
+  | Lambda (x, t, e, _) -> StringSet.union (vars t) (vars e)
+  | Prod (x, t, e, _) -> StringSet.union (vars t) (vars e)
   | App (t1, t2, _) -> StringSet.union (vars t1) (vars t2)
   | Ref (name, args, _) -> List.fold_left (fun vs t -> StringSet.union vs (vars t)) StringSet.empty args
   | Assert (e, t, _) -> StringSet.union (vars e) (vars t)
+                                        
+let rec free_vars = function
+  | Kind _ -> StringSet.empty
+  | Type _ -> StringSet.empty
+  | Var (x, _) -> StringSet.singleton x
+  | Lambda (x, t, e, _) -> StringSet.union (free_vars t) (StringSet.diff (free_vars e)
+                                                                         (StringSet.singleton x))
+  | Prod (x, t, e, _) -> StringSet.union (free_vars t) (StringSet.diff (free_vars e)
+                                                                       (StringSet.singleton x))
+  | App (t1, t2, _) -> StringSet.union (free_vars t1) (free_vars t2)
+  | Ref (name, args, _) -> List.fold_left (fun vs t -> StringSet.union vs (free_vars t)) StringSet.empty args
+  | Assert (e, t, _) -> StringSet.union (free_vars e) (free_vars t)
+
+let rec bound_vars t = StringSet.diff (vars t) (free_vars t)
+  
+let rec binding_vars = function
+  | Kind _ -> StringSet.empty
+  | Type _ -> StringSet.empty
+  | Var (x, _) -> StringSet.empty
+  | Lambda (x, t, e, _) -> StringSet.union (StringSet.singleton x)
+                                           (StringSet.union (binding_vars t) (binding_vars e))
+  | Prod (x, t, e, _) -> StringSet.union (StringSet.singleton x)
+                                         (StringSet.union (binding_vars t) (binding_vars e))
+  | App (t1, t2, _) -> StringSet.union (binding_vars t1) (binding_vars t2)
+  | Ref (name, args, _) -> List.fold_left (fun vs t -> StringSet.union vs (binding_vars t)) StringSet.empty args
+  | Assert (e, t, _) -> StringSet.union (binding_vars e) (binding_vars t)
 
                                         
-           

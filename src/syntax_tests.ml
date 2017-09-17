@@ -29,11 +29,34 @@ let ast_suite =
 (* variables tests *)
 let vars_test1 ctx = assert_equal (string_of_stringset (vars (lambda_ ("x", var_ "T") (var_ "x"))))
                                   "{T,x}"
+let vars_test2 ctx = assert_equal (string_of_stringset (vars (lambda_ ("x", var_ "T") (app_ (var_ "x")
+                                                                                            (var_ "y")))))
+                                  "{T,x,y}"
+let vars_test3 ctx = assert_equal (string_of_stringset (free_vars (lambda_ ("x", var_ "T") (app_ (var_ "x")
+                                                                                                 (var_ "y")))))
+                                  "{T,y}"
+let vars_test4 ctx = assert_equal (string_of_stringset (bound_vars (lambda_ ("x", var_ "T") (app_ (var_ "x")
+                                                                                                  (var_ "y")))))
+                                  "{x}"
+let vars_test5 ctx = assert_equal (string_of_stringset (binding_vars (lambda_ ("x", var_ "T") (app_ (var_ "x")
+                                                                                                    (var_ "y")))))
+                                  "{x}"
+let vars_test6 ctx = assert_equal (string_of_stringset (bound_vars (lambda_ ("z", var_ "U") (lambda_ ("x", var_ "T") (app_ (var_ "x")
+                                                                                                                           (var_ "y"))))))
+                                  "{x}"
+let vars_test7 ctx = assert_equal (string_of_stringset (binding_vars (lambda_ ("z", var_ "U") (lambda_ ("x", var_ "T") (app_ (var_ "x")
+                                                                                                                             (var_ "y"))))))
+                                  "{x,z}"
 
 let vars_suite =
   "vars">:::
     ["test1" >:: vars_test1
-                   (* ; "test2" >:: ast_test2 *)
+    ; "test2" >:: vars_test2
+    ; "test3" >:: vars_test3
+    ; "test4" >:: vars_test4
+    ; "test5" >:: vars_test5
+    ; "test6" >:: vars_test6
+    ; "test7" >:: vars_test7
     ] ;;
 
                                   
