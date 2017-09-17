@@ -5,3 +5,5 @@ S lib
 B _build/src
 B _build/lib
 
+# dependencies
+PKG batteries oUnit

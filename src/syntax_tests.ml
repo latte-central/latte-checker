@@ -48,6 +48,10 @@ let vars_test7 ctx = assert_equal (string_of_stringset (binding_vars (lambda_ ("
                                                                                                                              (var_ "y"))))))
                                   "{x,z}"
 
+let vars_test8 ctx = assert_equal (string_of_stringset (all_vars (lambda_ ("z", var_ "U") (lambda_ ("x", var_ "T") (app_ (var_ "x")
+                                                                                                                         (var_ "y"))))))
+                                  "{T,U,x,y,z}"
+
 let vars_suite =
   "vars">:::
     ["test1" >:: vars_test1
@@ -57,15 +61,34 @@ let vars_suite =
     ; "test5" >:: vars_test5
     ; "test6" >:: vars_test6
     ; "test7" >:: vars_test7
+    ; "test8" >:: vars_test8
     ] ;;
 
-                                  
+(* alpha normalization *)
+let noclash_test1 ctx = assert_equal (string_of_term (noclash_ (lambda_ ("x", var_ "T") (var_ "x"))))
+                                   "(lambda [x T] x)"
+let noclash_test2 ctx = assert_equal (string_of_term (noclash_ (lambda_ ("x", var_ "T")
+                                                                         (lambda_ ("x", var_ "U") (var_ "x")))))
+                                   "(lambda [x T] (lambda [x' U] x'))"
+let noclash_test3 ctx = assert_equal (string_of_term (noclash_ (lambda_ ("x", var_ "T")
+                                                                         (lambda_ ("x", var_ "U") (ref_ "test" [(var_"x"); (var_ "y")])))))
+                                   "(lambda [x T] (lambda [x' U] (test x' y)))"
+                                   
+let noclash_suite =
+  "noclash">:::
+    ["test1" >:: noclash_test1
+    ; "test2" >:: noclash_test2
+    ; "test3" >:: noclash_test3
+    ] ;;
+  
 let _ =
   Printf.printf "===== Running tests =====\n" ;
   Printf.printf "==> suite 'ast'\n" ;
   run_test_tt_main ast_suite ;
   Printf.printf "==> suite 'vars'\n" ;
-  (* Printf.printf "%s" (string_of_stringset (vars (lambda_ ("x", var_ "T") (var_ "x")))) ; *)
-  run_test_tt_main vars_suite
+  run_test_tt_main vars_suite ;
+  Printf.printf "==> suite 'noclash'\n" ;
+  (* Printf.printf "%s" (string_of_stringset (all_vars (lambda_ ("z", var_ "U") (lambda_ ("x", var_ "T") (app_ (var_ "x") *)
+  (*                                                                                                           (var_ "y")))))) ; *)
+  run_test_tt_main noclash_suite
 
-    

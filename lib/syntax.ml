@@ -72,7 +72,7 @@ let rec free_vars = function
   | Ref (name, args, _) -> List.fold_left (fun vs t -> StringSet.union vs (free_vars t)) StringSet.empty args
   | Assert (e, t, _) -> StringSet.union (free_vars e) (free_vars t)
 
-let rec bound_vars t = StringSet.diff (vars t) (free_vars t)
+let bound_vars t = StringSet.diff (vars t) (free_vars t)
   
 let rec binding_vars = function
   | Kind _ -> StringSet.empty
@@ -86,4 +86,65 @@ let rec binding_vars = function
   | Ref (name, args, _) -> List.fold_left (fun vs t -> StringSet.union vs (binding_vars t)) StringSet.empty args
   | Assert (e, t, _) -> StringSet.union (binding_vars e) (binding_vars t)
 
-                                        
+let rec all_vars = function
+  | Kind _ -> StringSet.empty
+  | Type _ -> StringSet.empty
+  | Var (x, _) -> StringSet.singleton x
+  | Lambda (x, t, e, _) -> StringSet.union (StringSet.union (vars t) (vars e))
+                                           (StringSet.singleton x)
+  | Prod (x, t, e, _) -> StringSet.union (StringSet.union (vars t) (vars e))
+                                         (StringSet.singleton x)  
+  | App (t1, t2, _) -> StringSet.union (vars t1) (vars t2)
+  | Ref (name, args, _) -> List.fold_left (fun vs t -> StringSet.union vs (vars t)) StringSet.empty args
+  | Assert (e, t, _) -> StringSet.union (vars e) (vars t)
+
+(* alpha equivalence etc. *)
+module Subst = Map.Make(String)
+
+let rec fresh (base:string) (level:int) (forbidden:StringSet.t) : string =
+  let candidate = match level with
+    | 0 -> base
+    | 1 -> base ^ "'"
+    | 2 -> base ^ "''"
+    | k -> Printf.sprintf "%s-%d" base level
+  in if StringSet.mem candidate forbidden
+     then fresh base (level + 1) forbidden
+     else candidate
+
+let rename x sub =
+  try Subst.find x sub
+  with Not_found -> x
+
+let rec noclash t forbidden sub =
+  let noclash_binder x t e forbidden sub= 
+    let x' = fresh x 0 forbidden in
+    let forbidden' = StringSet.add x' forbidden in
+    let (t', forbidden'') = noclash t forbidden' sub in
+    let sub' = Subst.add x x' sub in
+    let (e', forbidden''') = noclash e forbidden'' sub'
+    in ((x', t', e'), forbidden''')
+  and noclash_comp t1 t2 forbidden sub =
+    let (t1', forbidden') = noclash t1 forbidden sub in
+    let (t2', forbidden'') = noclash t2 forbidden' sub
+    in ((t1', t2'), forbidden'')
+  in match t with
+     | Var (x, info) -> (Var (rename x sub, info), forbidden)
+     | Lambda (x, t, e, info) -> let ((x', t', e'), forbidden') = noclash_binder x t e forbidden sub
+                                 in (Lambda (x', t', e', info), forbidden')
+     | Prod (x, t, e, info) -> let ((x', t', e'), forbidden') = noclash_binder x t e forbidden sub
+                               in (Prod (x', t', e', info), forbidden')
+     | App (t1, t2, info) -> let ((t1', t2'), forbidden') = noclash_comp t1 t2 forbidden sub
+                             in (App (t1', t2', info), forbidden')
+     | Ref (name, args, info) -> let (rargs', forbidden''') =
+                                   List.fold_left (fun (args', forbidden') arg ->
+                                       let (arg', forbidden'') = noclash arg forbidden' sub
+                                       in (arg'::args', forbidden'')) ([], forbidden) args 
+                                 in (Ref (name, List.rev rargs', info), forbidden''')
+     | Assert (e, t, info) -> let ((e', t'), forbidden') = noclash_comp e t forbidden sub
+                              in (Assert (e', t', info), forbidden')
+     | _ -> (t, forbidden)                               
+
+let noclash_ t =
+  let (t', _) = noclash t (StringSet.empty) (Subst.empty)
+  in t'
+
