@@ -86,11 +86,25 @@ let subst_test1 ctx = assert_equal (string_of_term (subst_one (var_ "x") "x" typ
                         ":type"
 let subst_test2 ctx = assert_equal (string_of_term (subst_one (var_ "y") "x" type_))
                         "y"
+let subst_test3 ctx = assert_equal (string_of_term (subst_one (app_ (var_ "y") (var_ "x")) "x" type_))
+                        "[y :type]"
+
+let subst_test4 ctx = assert_equal (string_of_term (subst_one (prod_ ("_", prod_ ("x'", var_ "T")
+                                                                             (prod_ ("_", prod_ ("x", var_ "T")
+                                                                                            (prod_ ("_", app_ (var_ "X") (var_ "x"))
+                                                                                               (app_ (app_ (var_ "R") (var_ "x"))
+                                                                                                  (var_ "x'"))))
+                                                                                (app_ (var_ "R") (var_ "z"))))
+                                                                 (app_ (var_ "R") (var_ "z"))) "z" (var_ "x")))
+                        "(prod [_ (prod [x' T] (prod [_' (prod [x'' T] (prod [_'' [X x'']] [[R x''] x']))] [R x]))] [R x])"
+                        
 
 let subst_suite =
   "subst">:::
     ["test1" >:: subst_test1
     ; "test2" >:: subst_test2
+    ; "test3" >:: subst_test3
+    ; "test4" >:: subst_test4
     ] ;;
 
 let _ =
@@ -102,7 +116,14 @@ let _ =
   Printf.printf "==> suite 'noclash'\n" ;
   run_test_tt_main subst_suite ;
   Printf.printf "==> suite 'noclash'\n" ;
-  (* Printf.printf "%s" (string_of_stringset (all_vars (lambda_ ("z", var_ "U") (lambda_ ("x", var_ "T") (app_ (var_ "x") *)
-  (*                                                                                                           (var_ "y")))))) ; *)
+  (* Printf.printf "%s" (string_of_term (subst_one (prod_ ("_", prod_ ("x'", var_ "T")
+   *                                                              (prod_ ("_", prod_ ("x", var_ "T")
+   *                                                                             (prod_ ("_", app_ (var_ "X") (var_ "x"))
+   *                                                                                (app_ (app_ (var_ "R") (var_ "x"))
+   *                                                                                   (var_ "x'"))))
+   *                                                                 (app_ (var_ "R") (var_ "z"))))
+   *                                                      (app_ (var_ "R") (var_ "z"))) "z" (var_ "x"))) ; *)
   run_test_tt_main subst_suite
+
+
 

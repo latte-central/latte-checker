@@ -98,7 +98,7 @@ let rec all_vars = function
   | Ref (name, args, _) -> List.fold_left (fun vs t -> StringSet.union vs (vars t)) StringSet.empty args
   | Assert (e, t, _) -> StringSet.union (vars e) (vars t)
 
-(* alpha equivalence etc. *)
+(* barendregt convention *)
 module Subst = Map.Make(String)
 
 let rec fresh (base:string) (level:int) (forbidden:StringSet.t) : string =
