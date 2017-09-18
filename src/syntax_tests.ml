@@ -64,7 +64,7 @@ let vars_suite =
     ; "test8" >:: vars_test8
     ] ;;
 
-(* alpha normalization *)
+(* barendregt convention *)
 let noclash_test1 ctx = assert_equal (string_of_term (noclash_ (lambda_ ("x", var_ "T") (var_ "x"))))
                                    "(lambda [x T] x)"
 let noclash_test2 ctx = assert_equal (string_of_term (noclash_ (lambda_ ("x", var_ "T")
@@ -80,7 +80,19 @@ let noclash_suite =
     ; "test2" >:: noclash_test2
     ; "test3" >:: noclash_test3
     ] ;;
-  
+
+(* substitution *)
+let subst_test1 ctx = assert_equal (string_of_term (subst_one (var_ "x") "x" type_))
+                        ":type"
+let subst_test2 ctx = assert_equal (string_of_term (subst_one (var_ "y") "x" type_))
+                        "y"
+
+let subst_suite =
+  "subst">:::
+    ["test1" >:: subst_test1
+    ; "test2" >:: subst_test2
+    ] ;;
+
 let _ =
   Printf.printf "===== Running tests =====\n" ;
   Printf.printf "==> suite 'ast'\n" ;
@@ -88,7 +100,9 @@ let _ =
   Printf.printf "==> suite 'vars'\n" ;
   run_test_tt_main vars_suite ;
   Printf.printf "==> suite 'noclash'\n" ;
+  run_test_tt_main subst_suite ;
+  Printf.printf "==> suite 'noclash'\n" ;
   (* Printf.printf "%s" (string_of_stringset (all_vars (lambda_ ("z", var_ "U") (lambda_ ("x", var_ "T") (app_ (var_ "x") *)
   (*                                                                                                           (var_ "y")))))) ; *)
-  run_test_tt_main noclash_suite
+  run_test_tt_main subst_suite
 

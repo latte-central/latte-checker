@@ -148,3 +148,51 @@ let noclash_ t =
   let (t', _) = noclash t (StringSet.empty) (Subst.empty)
   in t'
 
+(* substitution *)
+let var_subst x info sub =
+  try Subst.find x sub
+  with Not_found -> Var (x, info)
+                        
+let rec subst t forbidden ren sub = match t with
+  | Var (x, info) -> (var_subst (rename x ren) info sub
+                     , forbidden)
+  | Lambda (x, t, e, info) -> let ((x', t', e'), forbidden') = subst_binder x t e forbidden ren sub
+                              in (Lambda (x', t', e', info), forbidden')
+  | Prod (x, t, e, info) -> let ((x', t', e'), forbidden') = subst_binder x t e forbidden ren sub
+                            in (Prod (x', t', e', info), forbidden')
+  | App (t1, t2, info) -> let ((t1', t2'), forbidden') = subst_compose t1 t2 forbidden ren sub
+                          in (App (t1', t2', info), forbidden')
+  | Ref (name, args, info) -> let (rargs', forbidden') = List.fold_left (fun (args, forbidden) arg ->
+                                                             let (arg', forbidden') = subst arg forbidden ren sub
+                                                             in (arg'::args, forbidden')) ([], forbidden) args
+                              in (Ref (name, List.rev rargs', info), forbidden')
+  | Assert (e, t, info) -> let ((e', t'), forbidden') = subst_compose e t forbidden ren sub
+                           in (Assert (e', t', info), forbidden')
+  | _ -> (t, forbidden)
+                          
+                               
+and subst_binder x t e forbidden ren sub =
+  let x' = fresh x 0 forbidden in
+  let forbidden' = StringSet.add x' forbidden in
+  let (t', forbidden'') = subst t forbidden' ren sub in
+  let ren' = Subst.add x x' ren in
+  let (e', forbidden''') = subst e forbidden'' ren' sub
+  in ((x', t', e'), forbidden''')
+
+and subst_compose t1 t2 forbidden ren sub =
+  let (t1', forbidden') = subst t1 forbidden ren sub in
+  let (t2', forbidden'') = subst t2 forbidden' ren sub in
+  ((t1', t2'), forbidden'')
+
+let subst_ t sub =
+  let forbidden = Subst.fold
+                    (fun x t forbidden -> StringSet.union forbidden (all_vars t))
+                    sub StringSet.empty in
+  let (t',_) = subst t forbidden Subst.empty sub
+  in t'
+
+let subst_one t x u =
+  subst_ t (Subst.singleton x u)
+
+    
+    
