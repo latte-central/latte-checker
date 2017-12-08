@@ -213,5 +213,10 @@ let alpha_norm t =
   let t', _ = alpha_norm_ t (Subst.empty) 1
   in t'
 
-           
+(* alpha equivalence *)
 
+
+let alpha_eq t1 t2 =
+  alpha_norm t1 = alpha_norm t2
+
+                                        

@@ -109,21 +109,26 @@ let subst_suite =
 
 (* alpha normalization *)
 
-let alpha_norm_test1 ctx = assert_equal (string_of_term (alpha_norm (var_ "x"))) "x"
-let alpha_norm_test2 ctx = assert_equal (string_of_term (alpha_norm (lambda_ ("x", (var_ "T")) (var_ "x")))) "(lambda [_1 T] _1)"
-let alpha_norm_test3 ctx = assert_equal (string_of_term (alpha_norm
+let alpha_test1 ctx = assert_equal (string_of_term (alpha_norm (var_ "x"))) "x"
+let alpha_test2 ctx = assert_equal (string_of_term (alpha_norm (lambda_ ("x", (var_ "T")) (var_ "x")))) "(lambda [_1 T] _1)"
+let alpha_test3 ctx = assert_equal (string_of_term (alpha_norm
                                                            (app_ (var_ "x")
                                                               (lambda_ ("x", (var_ "T"))
                                                                  (ref_ "test" [var_ "x"
                                                                              ; var_ "y"
                                                                              ; (app_ (var_ "x") (var_ "z"))])))))
                              "[x (lambda [_1 T] (test _1 y [_1 z]))]"
-                             
-let alpha_norm_suite =
+let alpha_test4 ctx = assert_equal (alpha_eq
+                                      (lambda_ ("x", (var_ "T")) (var_ "x"))
+                                      (lambda_ ("y", (var_ "T")) (var_ "y")))
+                        true
+                    
+let alpha_suite =
   "alpha_norm">:::
-    ["test1" >:: alpha_norm_test1
-    ; "test2" >:: alpha_norm_test2
-    ; "test3" >:: alpha_norm_test3
+    ["test1" >:: alpha_test1
+    ; "test2" >:: alpha_test2
+    ; "test3" >:: alpha_test3
+    ; "test4" >:: alpha_test4
     ] ;;
 
 (* Test runner *)
@@ -138,13 +143,10 @@ let _ =
   run_test_tt_main noclash_suite ;
   Printf.printf "==> suite 'subst'\n" ;
   run_test_tt_main subst_suite ;
-  Printf.printf "==> suite 'alpha_norm'\n" ;
-  (* Printf.printf "%s" (string_of_term (alpha_norm
-   *                                                          (app_ (var_ "x")
-   *                                                             (lambda_ ("x", (var_ "T"))
-   *                                                                (ref_ "test" [var_ "x"
-   *                                                                            ; var_ "y"
-   *                                                                            ; (app_ (var_ "x") (var_ "z"))]))))) ; *)
-  run_test_tt_main alpha_norm_suite
+  Printf.printf "==> suite 'alpha'\n" ;
+  (* Printf.printf "%b"  (alpha_eq
+   *                                     (lambda_ ("x", (var_ "T")) (var_ "x"))
+   *                                     (lambda_ ("y", (var_ "T")) (var_ "y"))) ; *)
+  run_test_tt_main alpha_suite
 
 
