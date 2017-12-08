@@ -186,7 +186,32 @@ let subst_one t x u =
     
 (* alpha normalization *)
 
-(*
-let alpha_norm t sub level = match t with
-  | Var (x, info) -> subst
- *)
+let rec alpha_norm_ t sub level = match t with
+  | Var (x, info) -> (var_subst x info sub, level)
+  | Lambda (x, ty, body, info) ->
+     let x' = "_" ^ (string_of_int level) and
+         ty', level' = alpha_norm_ ty sub (level + 1) in
+     let body', level'' = alpha_norm_ body (Subst.add x (Var (x', info)) sub) level' in
+     (Lambda (x', ty', body', info), level'')
+  | Prod (x, ty, body, info) ->
+     let x' = "_" ^ (string_of_int level) and
+         ty', level' = alpha_norm_ ty sub (level + 1) in
+     let body', level'' = alpha_norm_ body (Subst.add x (Var (x', info)) sub) level' in
+     (Prod (x', ty', body', info), level'')
+  | App (t1, t2, info) ->
+     let t1', level' = alpha_norm_ t1 sub level in
+     let t2', level'' = alpha_norm_ t2 sub level' in
+     (App (t1', t2', info), level'')
+  | Ref (name, args, info) ->
+     let args', level' = List.fold_left (fun (args, level) arg ->
+                             let arg', level' = alpha_norm_ arg sub level in
+                             (arg'::args, level')) ([], level) args in
+     (Ref (name, List.rev args', info), level')
+  | _ -> (t, level)
+
+let alpha_norm t =
+  let t', _ = alpha_norm_ t (Subst.empty) 1
+  in t'
+
+           
+

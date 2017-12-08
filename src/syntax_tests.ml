@@ -107,6 +107,27 @@ let subst_suite =
     ; "test4" >:: subst_test4
     ] ;;
 
+(* alpha normalization *)
+
+let alpha_norm_test1 ctx = assert_equal (string_of_term (alpha_norm (var_ "x"))) "x"
+let alpha_norm_test2 ctx = assert_equal (string_of_term (alpha_norm (lambda_ ("x", (var_ "T")) (var_ "x")))) "(lambda [_1 T] _1)"
+let alpha_norm_test3 ctx = assert_equal (string_of_term (alpha_norm
+                                                           (app_ (var_ "x")
+                                                              (lambda_ ("x", (var_ "T"))
+                                                                 (ref_ "test" [var_ "x"
+                                                                             ; var_ "y"
+                                                                             ; (app_ (var_ "x") (var_ "z"))])))))
+                             "[x (lambda [_1 T] (test _1 y [_1 z]))]"
+                             
+let alpha_norm_suite =
+  "alpha_norm">:::
+    ["test1" >:: alpha_norm_test1
+    ; "test2" >:: alpha_norm_test2
+    ; "test3" >:: alpha_norm_test3
+    ] ;;
+
+(* Test runner *)
+
 let _ =
   Printf.printf "===== Running tests =====\n" ;
   Printf.printf "==> suite 'ast'\n" ;
@@ -114,16 +135,16 @@ let _ =
   Printf.printf "==> suite 'vars'\n" ;
   run_test_tt_main vars_suite ;
   Printf.printf "==> suite 'noclash'\n" ;
-  run_test_tt_main subst_suite ;
+  run_test_tt_main noclash_suite ;
   Printf.printf "==> suite 'subst'\n" ;
-  (* Printf.printf "%s" (string_of_term (subst_one (prod_ ("_", prod_ ("x'", var_ "T")
-   *                                                              (prod_ ("_", prod_ ("x", var_ "T")
-   *                                                                             (prod_ ("_", app_ (var_ "X") (var_ "x"))
-   *                                                                                (app_ (app_ (var_ "R") (var_ "x"))
-   *                                                                                   (var_ "x'"))))
-   *                                                                 (app_ (var_ "R") (var_ "z"))))
-   *                                                      (app_ (var_ "R") (var_ "z"))) "z" (var_ "x"))) ; *)
-  run_test_tt_main subst_suite
-
+  run_test_tt_main subst_suite ;
+  Printf.printf "==> suite 'alpha_norm'\n" ;
+  (* Printf.printf "%s" (string_of_term (alpha_norm
+   *                                                          (app_ (var_ "x")
+   *                                                             (lambda_ ("x", (var_ "T"))
+   *                                                                (ref_ "test" [var_ "x"
+   *                                                                            ; var_ "y"
+   *                                                                            ; (app_ (var_ "x") (var_ "z"))]))))) ; *)
+  run_test_tt_main alpha_norm_suite
 
 
