@@ -42,8 +42,6 @@ let rec string_of_term = function
     -> Printf.sprintf "[%s %s]" (string_of_term t1) (string_of_term t2)
   | Ref (name, args, _)
     -> Printf.sprintf "(%s %s)" name (string_of_list string_of_term "" "" " " args)
-
-
          
 (* Variables and occurrences *)
 
@@ -92,6 +90,7 @@ let rec all_vars = function
   | Ref (name, args, _) -> List.fold_left (fun vs t -> StringSet.union vs (vars t)) StringSet.empty args
   
 (* barendregt convention *)
+                         
 module Subst = Map.Make(String)
 
 let rec fresh (base:string) (level:int) (forbidden:StringSet.t) : string =
@@ -140,11 +139,12 @@ let noclash_ t =
   in t'
 
 (* substitution *)
+   
 let var_subst x info sub =
   try Subst.find x sub
   with Not_found -> Var (x, info)
                         
-let rec subst t forbidden ren sub = match t with
+let rec subst_ t forbidden ren sub = match t with
   | Var (x, info) -> (var_subst (rename x ren) info sub
                      , forbidden)
   | Lambda (x, t, e, info) -> let ((x', t', e'), forbidden') = subst_binder x t e forbidden ren sub
@@ -154,7 +154,7 @@ let rec subst t forbidden ren sub = match t with
   | App (t1, t2, info) -> let ((t1', t2'), forbidden') = subst_compose t1 t2 forbidden ren sub
                           in (App (t1', t2', info), forbidden')
   | Ref (name, args, info) -> let (rargs', forbidden') = List.fold_left (fun (args, forbidden) arg ->
-                                                             let (arg', forbidden') = subst arg forbidden ren sub
+                                                             let (arg', forbidden') = subst_ arg forbidden ren sub
                                                              in (arg'::args, forbidden')) ([], forbidden) args
                               in (Ref (name, List.rev rargs', info), forbidden')
   | _ -> (t, forbidden)
@@ -163,25 +163,30 @@ let rec subst t forbidden ren sub = match t with
 and subst_binder x t e forbidden ren sub =
   let x' = fresh x 0 forbidden in
   let forbidden' = StringSet.add x' forbidden in
-  let (t', forbidden'') = subst t forbidden' ren sub in
+  let (t', forbidden'') = subst_ t forbidden' ren sub in
   let ren' = Subst.add x x' ren in
-  let (e', forbidden''') = subst e forbidden'' ren' sub
+  let (e', forbidden''') = subst_ e forbidden'' ren' sub
   in ((x', t', e'), forbidden''')
 
 and subst_compose t1 t2 forbidden ren sub =
-  let (t1', forbidden') = subst t1 forbidden ren sub in
-  let (t2', forbidden'') = subst t2 forbidden' ren sub in
+  let (t1', forbidden') = subst_ t1 forbidden ren sub in
+  let (t2', forbidden'') = subst_ t2 forbidden' ren sub in
   ((t1', t2'), forbidden'')
 
-let subst_ t sub =
+let subst t sub =
   let forbidden = Subst.fold
                     (fun x t forbidden -> StringSet.union forbidden (all_vars t))
                     sub StringSet.empty in
-  let (t',_) = subst t forbidden Subst.empty sub
+  let (t',_) = subst_ t forbidden Subst.empty sub
   in t'
 
 let subst_one t x u =
-  subst_ t (Subst.singleton x u)
+  subst t (Subst.singleton x u)
 
     
-    
+(* alpha normalization *)
+
+(*
+let alpha_norm t sub level = match t with
+  | Var (x, info) -> subst
+ *)
