@@ -115,7 +115,7 @@ let _ =
   run_test_tt_main vars_suite ;
   Printf.printf "==> suite 'noclash'\n" ;
   run_test_tt_main subst_suite ;
-  Printf.printf "==> suite 'noclash'\n" ;
+  Printf.printf "==> suite 'subst'\n" ;
   (* Printf.printf "%s" (string_of_term (subst_one (prod_ ("_", prod_ ("x'", var_ "T")
    *                                                              (prod_ ("_", prod_ ("x", var_ "T")
    *                                                                             (prod_ ("_", app_ (var_ "X") (var_ "x"))
